@@ -7,8 +7,7 @@ pipeline {
   }
 
   environment {
-    // Change these 2
-    DOCKERHUB_USER = "samirrp19"   // e.g. samrash
+    DOCKERHUB_USER = "samirrp19"
     APP_NAME       = "lt-codex"
 
     IMAGE_TAG      = "${env.BUILD_NUMBER}"
@@ -26,18 +25,18 @@ pipeline {
         sh '''
           set -e
           docker version
-          docker build --no-cache -t "$IMAGE" -t "$IMAGE_LATEST" . 
+          docker build --no-cache -t "$IMAGE" -t "$IMAGE_LATEST" .
           docker images | head -n 30
         '''
       }
     }
 
-    stage('DockerHub Login') {
+    stage('DockerHub Login (Token)') {
       steps {
-        withCredentials([usernamePassword(credentialsId: 'dockerhub-creds', usernameVariable: 'DH_USER', passwordVariable: 'DH_PASS')]) {
+        withCredentials([string(credentialsId: 'dockerhub-creds', variable: 'DH_TOKEN')]) {
           sh '''
             set -e
-            echo "$DH_PASS" | docker login -u "$DH_USER" --password-stdin
+            echo "$DH_TOKEN" | docker login -u "samirrp19" --password-stdin
           '''
         }
       }
