@@ -26,7 +26,7 @@ pipeline {
         sh '''
           set -e
           docker version
-          docker build -t "$IMAGE" -t "$IMAGE_LATEST" .
+          docker build --no-cache -t "$IMAGE" -t "$IMAGE_LATEST" . 
           docker images | head -n 30
         '''
       }

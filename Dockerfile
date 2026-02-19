@@ -4,6 +4,7 @@ WORKDIR /app
 
 # Copy dependency files first for caching
 COPY package.json yarn.lock ./
+COPY .yarnrc.yml ./
 
 # Enable corepack (gives you yarn)
 RUN corepack enable
