@@ -1,0 +1,105 @@
+pipeline {
+  agent any
+
+  options {
+    timestamps()
+    ansiColor('xterm')
+    disableConcurrentBuilds()
+  }
+
+  environment {
+    // Change these 2
+    DOCKERHUB_USER = "YOUR_DOCKERHUB_USERNAME"   // e.g. samrash
+    APP_NAME       = "lt-codex"                  // repo/image name
+
+    IMAGE_TAG      = "${env.BUILD_NUMBER}"
+    IMAGE          = "${DOCKERHUB_USER}/${APP_NAME}:${IMAGE_TAG}"
+    IMAGE_LATEST   = "${DOCKERHUB_USER}/${APP_NAME}:latest"
+  }
+
+  stages {
+    stage('Checkout') {
+      steps { checkout scm }
+    }
+
+    stage('Yarn Install') {
+      steps {
+        sh '''
+          set -e
+          corepack enable || true
+
+          # Helpful for flaky networks
+          yarn config set network-timeout 600000 -g || true
+          yarn config set httpTimeout 600000 -g || true
+
+          yarn install --immutable || yarn install
+        '''
+      }
+    }
+
+    stage('Build (CRA)') {
+      steps {
+        sh '''
+          set -e
+          yarn run build
+          test -d build
+          du -sh build || true
+        '''
+      }
+    }
+
+    stage('Docker Build') {
+      steps {
+        sh '''
+          set -e
+          docker version
+          docker build -t "$IMAGE" -t "$IMAGE_LATEST" .
+          docker images | head -n 30
+        '''
+      }
+    }
+
+    stage('DockerHub Login') {
+      steps {
+        withCredentials([usernamePassword(credentialsId: 'dockerhub-creds', usernameVariable: 'DH_USER', passwordVariable: 'DH_PASS')]) {
+          sh '''
+            set -e
+            echo "$DH_PASS" | docker login -u "$DH_USER" --password-stdin
+          '''
+        }
+      }
+    }
+
+    stage('Push to DockerHub') {
+      steps {
+        sh '''
+          set -e
+          docker push "$IMAGE"
+          docker push "$IMAGE_LATEST"
+        '''
+      }
+    }
+
+    stage('Smoke Test (optional)') {
+      steps {
+        sh '''
+          set -e
+          CID=$(docker run -d -p 8088:80 "$IMAGE_LATEST")
+          echo "Container: $CID"
+          sleep 4
+          docker ps --filter "id=$CID"
+          docker logs --tail=60 "$CID" || true
+          docker rm -f "$CID" || true
+        '''
+      }
+    }
+  }
+
+  post {
+    always {
+      archiveArtifacts artifacts: 'build/**', allowEmptyArchive: true
+      sh 'docker logout || true'
+      cleanWs()
+    }
+  }
+}

@@ -1,0 +1,11 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: lt-codex-frontend
+  namespace: codex-api
+spec:
+  selector:
+    app: lt-codex-frontend
+  ports:
+    - port: 80
+      targetPort: 80

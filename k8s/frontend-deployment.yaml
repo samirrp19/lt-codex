@@ -1,0 +1,22 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: lt-codex-frontend
+  namespace: codex-api
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: lt-codex-frontend
+  template:
+    metadata:
+      labels:
+        app: lt-codex-frontend
+    spec:
+      containers:
+        - name: frontend
+          image: my-react-app:latest
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 80
+
