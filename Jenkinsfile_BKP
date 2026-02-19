@@ -3,13 +3,12 @@ pipeline {
 
   options {
     timestamps()
-    ansiColor('xterm')
     disableConcurrentBuilds()
   }
 
   environment {
     // Change these 2
-    DOCKERHUB_USER = "YOUR_DOCKERHUB_USERNAME"   // e.g. samrash
+    DOCKERHUB_USER = "samirrp19"   // e.g. samrash
     APP_NAME       = "lt-codex"                  // repo/image name
 
     IMAGE_TAG      = "${env.BUILD_NUMBER}"
@@ -32,6 +31,7 @@ pipeline {
           yarn config set network-timeout 600000 -g || true
           yarn config set httpTimeout 600000 -g || true
 
+          yarn --version
           yarn install --immutable || yarn install
         '''
       }
@@ -88,7 +88,7 @@ pipeline {
           echo "Container: $CID"
           sleep 4
           docker ps --filter "id=$CID"
-          docker logs --tail=60 "$CID" || true
+          docker logs --tail=80 "$CID" || true
           docker rm -f "$CID" || true
         '''
       }

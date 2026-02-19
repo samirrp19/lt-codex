@@ -9,7 +9,7 @@ pipeline {
   environment {
     // Change these 2
     DOCKERHUB_USER = "samirrp19"   // e.g. samrash
-    APP_NAME       = "lt-codex"                  // repo/image name
+    APP_NAME       = "lt-codex"
 
     IMAGE_TAG      = "${env.BUILD_NUMBER}"
     IMAGE          = "${DOCKERHUB_USER}/${APP_NAME}:${IMAGE_TAG}"
@@ -19,33 +19,6 @@ pipeline {
   stages {
     stage('Checkout') {
       steps { checkout scm }
-    }
-
-    stage('Yarn Install') {
-      steps {
-        sh '''
-          set -e
-          corepack enable || true
-
-          # Helpful for flaky networks
-          yarn config set network-timeout 600000 -g || true
-          yarn config set httpTimeout 600000 -g || true
-
-          yarn --version
-          yarn install --immutable || yarn install
-        '''
-      }
-    }
-
-    stage('Build (CRA)') {
-      steps {
-        sh '''
-          set -e
-          yarn run build
-          test -d build
-          du -sh build || true
-        '''
-      }
     }
 
     stage('Docker Build') {
@@ -97,7 +70,6 @@ pipeline {
 
   post {
     always {
-      archiveArtifacts artifacts: 'build/**', allowEmptyArchive: true
       sh 'docker logout || true'
       cleanWs()
     }
